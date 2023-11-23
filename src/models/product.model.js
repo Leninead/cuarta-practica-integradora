@@ -1,3 +1,5 @@
+// models/product.model.js
+
 const mongoose = require('mongoose');
 
 const productSchema = new mongoose.Schema({
@@ -19,6 +21,10 @@ const productSchema = new mongoose.Schema({
   quantity: {
     type: Number,
     default: 0, // Default quantity value if not provided
+  },
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
   },
 });
 

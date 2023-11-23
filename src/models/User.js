@@ -1,6 +1,6 @@
+const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('../config/config');
-const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
   firstName: String,
@@ -9,7 +9,11 @@ const userSchema = new mongoose.Schema({
   age: Number,
   password: String,
   cart: { type: mongoose.Schema.Types.ObjectId, ref: 'Cart' },
-  role: { type: String, enum: ['user', 'admin'], default: 'user' }
+  role: {
+    type: String,
+    enum: ['user', 'admin', 'premium'], // Add 'premium' role
+    default: 'user',
+  },
 });
 
 userSchema.methods.generateJWT = function () {
@@ -21,6 +25,4 @@ userSchema.methods.generateJWT = function () {
   }
 };
 
-const User = mongoose.model('User', userSchema);
-
-module.exports = User;
+module.exports = mongoose.model('User', userSchema);

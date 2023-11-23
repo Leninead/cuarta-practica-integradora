@@ -209,6 +209,9 @@ const productsRouter = require('./routes/products.router')
 const cartRoutes = require('./routes/cart.router')
 const authenticateUser = require('./authenticateUser')
 const path = require('path');
+require('dotenv').config();
+
+// Your application code here...
 
 const app = express();
 
