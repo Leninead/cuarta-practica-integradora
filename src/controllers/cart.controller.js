@@ -1,36 +1,44 @@
 const express = require('express');
-const router = express.Router();
-const CartService = require('../services/cart.service');
+const Cart = require('../models/cart.model');
 
-router.put('/update-cart/:productId', async (req, res) => {
+
+// Update product quantity in the cart
+exports.updateCartQuantity = async (req, res) => {
+  const { userId, productId, updatedQuantity } = req.params;
+
   try {
-    const userId = req.user._id;
-    const productId = req.params.productId;
-    const updatedQuantity = req.body.quantity;
+    const cart = await Cart.findOne({ userId });
+    const productIndex = cart.products.findIndex(product => product.productId === productId);
 
-    const updatedCartDto = await CartService.updateCart(userId, productId, updatedQuantity);
+    if (productIndex !== -1) {
+      cart.products[productIndex].quantity = updatedQuantity;
+      await cart.save();
 
-    return res.status(200).json(updatedCartDto);
+      return res.status(200).json({ message: 'Cart updated.' });
+    } else {
+      return res.status(404).json({ error: 'Product not found in the cart.' });
+    }
   } catch (error) {
     console.error('Error updating quantity:', error);
-    return res.status(500).json({ message: 'Internal server error.' });
+    return res.status(500).json({ error: 'Internal server error.' });
   }
-});
+};
 
-router.delete('/remove-from-cart/:productId', async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const productId = req.params.productId;
+// Remove a product from the cart
+exports.removeFromCart = async (req, res) => {
+    const { userId, productId } = req.params;
 
-    const updatedCartDto = await CartService.removeFromCart(userId, productId);
+    try {
+        const cart = await Cart.findOne({ userId });
+        cart.products = cart.products.filter(product => product.productId !== productId);
+        await cart.save();
 
-    return res.status(200).json(updatedCartDto);
-  } catch (error) {
-    console.error('Error removing product from cart:', error);
-    return res.status(500).json({ message: 'Internal server error.' });
-  }
-});
+        return res.status(200).json({ message: 'Product removed from cart.' });
+    } catch (error) {
+        console.error('Error removing product from cart:', error);
+        return res.status(500).json({ error: 'Internal server error.' });
+    }
+};
 
-// Add other routes using CartService as needed
+// Other cart controller functions...
 
-module.exports = router;

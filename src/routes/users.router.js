@@ -28,8 +28,6 @@ router.get('/admin-dashboard', passport.authenticate('jwt', { session: false }),
 router.get('/api/sessions/current', getCurrentSessionUser);
 
 // Change user role route
-router.put('/change-role/:uid', changeUserRole);
-
-// Other routes...
+router.put('/premium/:uid', changeUserRole);
 
 module.exports = router;

@@ -1,9 +1,9 @@
 const Product = require('../models/product.model');
 const Cart = require('../models/cart.model');
-const ProductService = require('../services/product.service')
+const ProductService = require('../services/product.service');
 
 // Get list of products with pagination
-exports.getProducts = async (req, res) => {
+const getProducts = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
@@ -19,7 +19,7 @@ exports.getProducts = async (req, res) => {
 };
 
 // Get individual product details
-exports.getProductDetails = async (req, res) => {
+const getProductDetails = async (req, res) => {
     const productId = req.params.productId;
 
     try {
@@ -35,9 +35,8 @@ exports.getProductDetails = async (req, res) => {
     }
 };
 
-
 // Add a product to the cart
-exports.addToCart = async (req, res) => {
+const addToCart = async (req, res) => {
     const userId = req.body.userId || req.headers['user-id'];
 
     if (!userId) {
@@ -70,6 +69,11 @@ exports.addToCart = async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+const addProduct = async (req, res) => {
+    // Your logic to add a product goes here
+    // Make sure to handle the request and send the appropriate response
+};
+
 
 // Update product quantity in the cart
 exports.updateCartQuantity = async (req, res) => {
@@ -133,9 +137,72 @@ exports.viewCart = async (req, res) => {
         res.status(500).json({ message: 'Internal server error.' });
     }
 };
+// Update product quantity in the cart
+const updateCartQuantity = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const productId = req.params.productId;
+        const updatedQuantity = req.body.quantity;
+
+        const cart = await Cart.findOne({ userId });
+        const productIndex = cart.products.findIndex(product => product.productId === productId);
+
+        if (productIndex !== -1) {
+            cart.products[productIndex].quantity = updatedQuantity;
+            await cart.save();
+
+            res.status(200).json({ message: 'Cart updated.' });
+        } else {
+            res.status(404).json({ message: 'Product not found in the cart.' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+};
+
+// Update product quantity in the cart (alternative endpoint)
+const updateQuantity = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const productId = req.params.productId;
+        const updatedQuantity = req.body.quantity;
+
+        const cart = await Cart.findOne({ userId });
+        const productIndex = cart.products.findIndex(product => product.productId === productId);
+
+        if (productIndex !== -1) {
+            cart.products[productIndex].quantity = updatedQuantity;
+            await cart.save();
+
+            res.status(200).json({ message: 'Cart updated.' });
+        } else {
+            res.status(404).json({ message: 'Product not found in the cart.' });
+        }
+    } catch (error) {
+        console.error('Error updating quantity:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+};
+
+// View the contents of the cart
+const viewCart = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const cart = await Cart.findOne({ userId }).populate('products.productId');
+
+        if (cart) {
+            res.status(200).json({ cartContents: cart.products });
+        } else {
+            res.status(404).json({ message: 'Cart not found.' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+};
+
 
 // Remove a product from the cart
-exports.removeFromCart = async (req, res) => {
+const removeFromCart = async (req, res) => {
     try {
         const userId = req.user._id;
         const productId = req.params.productId;
@@ -148,4 +215,15 @@ exports.removeFromCart = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: 'Internal server error.' });
     }
+};
+
+module.exports = {
+    getProducts,
+    getProductDetails,
+    addToCart,
+    addProduct,
+    updateCartQuantity,
+    updateQuantity,
+    viewCart,
+    removeFromCart
 };

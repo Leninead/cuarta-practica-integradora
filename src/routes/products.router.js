@@ -1,7 +1,9 @@
-// products.router.js
 const express = require('express');
 const router = express.Router();
-const { getProducts, getProductDetails, addProduct, addToCart, updateCartQuantity, updateQuantity, viewCart, removeFromCart } = require('../controllers/product.controller');
+const { getProducts, getProductDetails, addProduct, addToCart, updateCartQuantity, updateQuantity, viewCart, removeFromCart } = require('../controllers/product.controlle');
+
+// Add this line
+const ProductService = require('../services/product.service');
 
 // Route to handle product listing with pagination, filtering, and sorting
 router.get('/', getProducts);

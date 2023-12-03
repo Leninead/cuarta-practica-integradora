@@ -158,28 +158,23 @@ exports.resetPassword = async (req, res) => {
 
 // Change user role
 exports.changeUserRole = async (req, res) => {
+  const { uid } = req.params;
+  const { role } = req.body;
+
   try {
-      const { uid } = req.params;
-      const { newRole } = req.body;
+    const user = await User.findById(uid);
 
-      const user = await User.findById(uid);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
 
-      if (!user) {
-          return res.status(404).json({ message: 'User not found.' });
-      }
+    user.role = role;
+    await user.save();
 
-      // Validate the new role
-      if (!validRoles.includes(newRole)) {
-          return res.status(400).json({ message: 'Invalid role.' });
-      }
-
-      user.role = newRole;
-      await user.save();
-
-      res.status(200).json({ message: 'User role changed successfully.' });
+    return res.status(200).json({ message: 'User role updated.' });
   } catch (error) {
-      console.error('Error changing user role:', error);
-      res.status(500).json({ message: 'Internal server error.' });
+    console.error('Error changing user role:', error);
+    return res.status(500).json({ error: 'Internal server error.' });
   }
 };
 module.exports = exports;

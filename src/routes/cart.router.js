@@ -2,10 +2,12 @@ const express = require('express');
 const router = express.Router();
 const cartController = require('../controllers/cart.controller');
 
-// PUT endpoint to update product quantity in the cart
-router.put('/update-cart/:productId', cartController.updateCart);
+// Update product quantity in the cart
+router.put('/update-cart/:userId/:productId/:updatedQuantity', cartController.updateCartQuantity);
 
-// DELETE endpoint to remove a product from the cart
-router.delete('/remove-from-cart/:productId', cartController.removeFromCart);
+// Remove a product from the cart
+router.delete('/remove-from-cart/:userId/:productId', cartController.removeFromCart);
+
+// Other routes...
 
 module.exports = router;
