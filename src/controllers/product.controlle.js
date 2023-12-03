@@ -35,21 +35,7 @@ exports.getProductDetails = async (req, res) => {
     }
 };
 
-// Add a new product
-router.post('/add-product', async (req, res) => {
-    try {
-      const { name, price, description, stock, quantity } = req.body;
-  
-      const productData = { name, price, description, stock, quantity };
-      const newProductDto = await ProductService.createProduct(productData);
-  
-      return res.status(201).json(newProductDto);
-    } catch (error) {
-      console.error('Error while adding a product:', error);
-      return res.status(500).json({ error: 'Internal server error' });
-    }
-  });
-  
+
 // Add a product to the cart
 exports.addToCart = async (req, res) => {
     const userId = req.body.userId || req.headers['user-id'];

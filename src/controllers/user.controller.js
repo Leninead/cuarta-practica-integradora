@@ -4,21 +4,25 @@ const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const { sendPasswordResetEmail } = require('../utils/email');
 const UserService = require('../services/user.service');
+const saltRounds = 10; 
+const validRoles = require('../utils/roles')
 
-router.post('/register', async (req, res) => {
-    try {
+exports.registerUser = async (req, res) => {
+  try {
       const { firstName, lastName, email, age, password, role } = req.body;
-  
-      const userData = { firstName, lastName, email, age, password, role };
+      
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+      const userData = { firstName, lastName, email, age, password: hashedPassword, role };
       const newUserDto = await UserService.createUser(userData);
-  
+
       return res.status(201).json(newUserDto);
-    } catch (error) {
+  } catch (error) {
       console.error('Error during registration: ', error);
       return res.status(500).send('Internal server error');
-    }
-  });
-  
+  }
+};
 
 exports.loginUser = async (req, res) => {
   const { email, password } = req.body;
@@ -61,7 +65,7 @@ exports.logoutUser = async (req, res) => {
 };
 
 exports.adminDashboard = async (req, res) => {
-  console.log('Requesting admin dashboard:', req.user);
+  console.log('Request received for admin dashboard:', req.user);
   try {
     const user = await User.findById(req.user.id);
 
@@ -155,29 +159,27 @@ exports.resetPassword = async (req, res) => {
 // Change user role
 exports.changeUserRole = async (req, res) => {
   try {
-    const { uid } = req.params;
-    const { newRole } = req.body;
+      const { uid } = req.params;
+      const { newRole } = req.body;
 
-    const user = await User.findById(uid);
+      const user = await User.findById(uid);
 
-    if (!user) {
-      return res.status(404).json({ message: 'User not found.' });
-    }
+      if (!user) {
+          return res.status(404).json({ message: 'User not found.' });
+      }
 
-    // Validate the new role
-    const validRoles = ['user', 'admin', 'premium'];
-    if (!validRoles.includes(newRole)) {
-      return res.status(400).json({ message: 'Invalid role.' });
-    }
+      // Validate the new role
+      if (!validRoles.includes(newRole)) {
+          return res.status(400).json({ message: 'Invalid role.' });
+      }
 
-    user.role = newRole;
-    await user.save();
+      user.role = newRole;
+      await user.save();
 
-    res.status(200).json({ message: 'User role changed successfully.' });
+      res.status(200).json({ message: 'User role changed successfully.' });
   } catch (error) {
-    console.error('Error changing user role:', error);
-    res.status(500).json({ message: 'Internal server error.' });
+      console.error('Error changing user role:', error);
+      res.status(500).json({ message: 'Internal server error.' });
   }
 };
-
 module.exports = exports;

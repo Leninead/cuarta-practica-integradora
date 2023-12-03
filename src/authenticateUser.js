@@ -1,15 +1,18 @@
-
+const passport = require('passport');
 
 const authenticateUser = (req, res, next) => {
-    
-    
-    const userId = req.headers['user-id'];
-  
-  
-    req.user = { _id: userId }; 
-  
-    next(); 
-  };
-  
-  module.exports = authenticateUser;
-  
+    passport.authenticate('jwt', { session: false }, (err, user, info) => {
+        if (err) {
+            return next(err);
+        }
+
+        if (!user) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        req.user = user;
+        next();
+    })(req, res, next);
+};
+
+module.exports = authenticateUser;

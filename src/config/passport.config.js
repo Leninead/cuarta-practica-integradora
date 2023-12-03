@@ -40,23 +40,25 @@ const configurePassport = () => {
   ));
 
   // JWT Strategy
-  const jwtOptions = {
-    jwtFromRequest: cookieExtractor, // Use the cookie extractor here
-    secretOrKey: JWT_SECRET
-  };
+// JWT Strategy
+const jwtOptions = {
+  jwtFromRequest: cookieExtractor, // Use the cookie extractor here
+  secretOrKey: JWT_SECRET
+};
 
-  passport.use(new JwtStrategy(jwtOptions, async (jwtPayload, done) => {
-    try {
-      const user = await User.findById(jwtPayload.id);
-      if (user) {
-        return done(null, user);
-      } else {
-        return done(null, false);
-      }
-    } catch (error) {
-      return done(error, false);
+passport.use(new JwtStrategy(jwtOptions, async (jwtPayload, done) => {
+  try {
+    const user = await User.findById(jwtPayload.id);
+    if (user) {
+      return done(null, user);
+    } else {
+      return done(null, false);
     }
-  }));
+  } catch (error) {
+    return done(error, false);
+  }
+}));
+
 
   // Serialize and deserialize user for session management
   passport.serializeUser(function(user, done) {

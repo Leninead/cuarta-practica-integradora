@@ -1,7 +1,7 @@
+// products.router.js
 const express = require('express');
 const router = express.Router();
 const { getProducts, getProductDetails, addProduct, addToCart, updateCartQuantity, updateQuantity, viewCart, removeFromCart } = require('../controllers/product.controller');
-const Product = require('../models/product.model');
 
 // Route to handle product listing with pagination, filtering, and sorting
 router.get('/', getProducts);
@@ -9,7 +9,7 @@ router.get('/', getProducts);
 // Route to view individual product details
 router.get('/:productId', getProductDetails);
 
-// Route to add a new product
+// Route to add a product
 router.post('/add-product', addProduct);
 
 // Route to add a product to the cart

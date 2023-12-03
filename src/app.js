@@ -199,22 +199,20 @@ const session = require('express-session');
 const bodyParser = require('body-parser');
 const { Strategy: JwtStrategy, ExtractJwt } = require('passport-jwt');
 const passport = require('passport');
-const initializePassport = require('./config/passport.config');
+const configurePassport = require('./config/passport.config');
 const usersRouter = require('./routes/users.router');
 const { JWT_SECRET } = require('./config/config'); // Ensure you have a config file for your JWT secret
-const configurePassport = require('./config/passport.config');
 const cookieParser = require('cookie-parser');
-const User  = require('./models/User');
-const productsRouter = require('./routes/products.router')
-const cartRoutes = require('./routes/cart.router')
-const authenticateUser = require('./authenticateUser')
+const User = require('./models/User');
+const productsRouter = require('./routes/products.router');
+const cartRoutes = require('./routes/cart.router');
+const authenticateUser = require('./authenticateUser');
 const path = require('path');
 require('dotenv').config();
 
 // Your application code here...
 
 const app = express();
-
 
 const connectDB = require('./db');
 
@@ -227,9 +225,6 @@ app.set('view engine', 'ejs');
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.urlencoded({ extended: true }));
-
-// Initialize Passport
-initializePassport();
 
 // Configure Passport
 configurePassport();
@@ -247,45 +242,43 @@ app.use(cookieParser());
 // Initialize Passport
 app.use(passport.initialize());
 
+
+
 // JWT Authentication Route
 const jwtOptions = {
   jwtFromRequest: ExtractJwt.fromExtractors([
     ExtractJwt.fromAuthHeaderAsBearerToken(),
     (req) => {
       if (req && req.cookies) {
-        return req.cookies['your-cookie-name']; // Adjust your cookie name
+        return req.cookies['jwt']; // Replace 'your-cookie-name' with 'jwt'
       }
       return null;
     },
   ]),
   secretOrKey: JWT_SECRET,
 };
-passport.use(
-  new JwtStrategy(jwtOptions, async (jwtPayload, done) => {
-    try {
-      const user = await User.findById(jwtPayload.id);
-      if (user) {
-        return done(null, user);
-      } else {
-        return done(null, false);
-      }
-    } catch (error) {
-      return done(error, false);
+passport.use(new JwtStrategy(jwtOptions, async (jwtPayload, done) => {
+  try {
+    const user = await User.findById(jwtPayload.id);
+    if (user) {
+      return done(null, user);
+    } else {
+      return done(null, false);
     }
-  })
-);
+  } catch (error) {
+    return done(error, false);
+  }
+}));
 
+// Use the authentication middleware
+app.use(authenticateUser);
 
 // Authentication Routes
 app.use('/users', usersRouter);
 app.use('/products', productsRouter);
 
-// Use the authentication middleware
-app.use(authenticateUser);
-
 // Use the cart routes
-app.use('/cart', cartRoutes); 
-
+app.use('/cart', cartRoutes);
 
 // JWT Authentication Route
 app.post('/login', passport.authenticate('login', { session: false }), (req, res) => {
@@ -294,7 +287,7 @@ app.post('/login', passport.authenticate('login', { session: false }), (req, res
 });
 
 app.get('/', (req, res) => {
-  res.render('home');  // Render the home view when accessing '/'
+    res.render('home');  // Render the home view when accessing '/'
 });
 
 app.listen(8080, () => {
