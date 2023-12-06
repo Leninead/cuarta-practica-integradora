@@ -1,5 +1,9 @@
 const nodemailer = require('nodemailer');
+const ejs = require('ejs');
+const fs = require('fs');
+const path = require('path');
 const { EMAIL_USERNAME, EMAIL_PASSWORD } = require('../config/config');
+
 
 // Create a nodemailer transporter with your email provider settings
 const transporter = nodemailer.createTransport({
@@ -11,26 +15,27 @@ const transporter = nodemailer.createTransport({
 });
 
 // Function to send a password reset email
+// Function to send a password reset email
 exports.sendPasswordResetEmail = async (to, resetToken) => {
-  // Include a timestamp in the reset token
-  const timestamp = Date.now();
-  const resetTokenWithTimestamp = `${resetToken}_${timestamp}`;
-
-  const mailOptions = {
-    from: 'your-email@gmail.com',
-    to,
-    subject: 'Password Reset',
-    html: `<p>Click the following link to reset your password:</p>
-           <a href="http://your-app/reset-password/${resetTokenWithTimestamp}">Reset Password</a>`,
-  };
-
   try {
+    // Include a timestamp in the reset token
+    const timestamp = Date.now();
+    const resetTokenWithTimestamp = `${resetToken}_${timestamp}`;
+    const mailOptions = {
+      from: EMAIL_SENDER,
+      to,
+      subject: 'Password Reset',
+      html: ejs.render(fs.readFileSync(path.resolve(__dirname, '../views/email.ejs'), 'utf8'), { resetLink: `http://localhost:8080/reset-password/${resetTokenWithTimestamp}` }),
+    };
+    
+
     await transporter.sendMail(mailOptions);
     console.log('Password reset email sent successfully.');
   } catch (error) {
     console.error('Error sending password reset email:', error);
   }
 };
+
 
 // Function to validate the reset token and check expiration
 exports.validateResetToken = (resetToken) => {

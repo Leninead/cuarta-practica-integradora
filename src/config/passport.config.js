@@ -42,12 +42,14 @@ const configurePassport = () => {
   // JWT Strategy
 // JWT Strategy
 const jwtOptions = {
-  jwtFromRequest: cookieExtractor, // Use the cookie extractor here
+  jwtFromRequest: cookieExtractor,
   secretOrKey: JWT_SECRET
 };
 
 passport.use(new JwtStrategy(jwtOptions, async (jwtPayload, done) => {
   try {
+    console.log('JWT Payload:', jwtPayload); // Log the payload
+
     const user = await User.findById(jwtPayload.id);
     if (user) {
       return done(null, user);

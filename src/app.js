@@ -208,14 +208,13 @@ const productsRouter = require('./routes/products.router');
 const cartRoutes = require('./routes/cart.router');
 const authenticateUser = require('./authenticateUser');
 const path = require('path');
+const crypto = require('crypto');
+const helmet = require('helmet');
 require('dotenv').config();
-
-// Your application code here...
 
 const app = express();
 
 const connectDB = require('./db');
-
 connectDB();
 
 app.set('views', path.join(__dirname, 'views'));
@@ -223,26 +222,32 @@ app.set('view engine', 'ejs');
 
 // Body parsing middlewares
 app.use(express.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.urlencoded({ extended: true }));
 
 // Configure Passport
-configurePassport();
-
-// Use session
 app.use(session({
-    secret: 'coderhouse',
-    resave: false,
-    saveUninitialized: true,
+  secret: crypto.randomBytes(64).toString('hex'),
+  resave: false,
+  saveUninitialized: true,
 }));
-
+app.use(passport.initialize());
+app.use(passport.session());
+configurePassport();
 // Use cookie parser
 app.use(cookieParser());
 
-// Initialize Passport
-app.use(passport.initialize());
+// Use the authentication middleware
+app.use(authenticateUser);
 
+// Use helmet for security
+app.use(helmet());
 
+// Authentication Routes
+app.use('/users', usersRouter);
+app.use('/products', productsRouter);
+
+// Use the cart routes
+app.use('/cart', cartRoutes);
 
 // JWT Authentication Route
 const jwtOptions = {
@@ -270,26 +275,17 @@ passport.use(new JwtStrategy(jwtOptions, async (jwtPayload, done) => {
   }
 }));
 
-// Use the authentication middleware
-app.use(authenticateUser);
+// Error handling
+// In app.js
+app.use((err, req, res, next) => {
+  console.error(err.stack);
 
-// Authentication Routes
-app.use('/users', usersRouter);
-app.use('/products', productsRouter);
-
-// Use the cart routes
-app.use('/cart', cartRoutes);
-
-// JWT Authentication Route
-app.post('/login', passport.authenticate('login', { session: false }), (req, res) => {
-    const token = req.user.generateJWT();
-    res.json({ token });
+  // Send a meaningful error response
+  res.status(500).json({ error: 'Internal Server Error' });
 });
 
-app.get('/', (req, res) => {
-    res.render('home');  // Render the home view when accessing '/'
-});
-
-app.listen(8080, () => {
-    console.log('Server running on port 8080');
+// Start the server
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });

@@ -1,3 +1,4 @@
+
 const mongoose = require('mongoose');
 const { MONGODB_URI } = require('./config/config');
 
@@ -13,8 +14,9 @@ const connectDB = async () => {
     console.log('Connected to MongoDB');
   } catch (error) {
     console.error('Error connecting to MongoDB:', error.message);
+    // Throw an error or handle it based on your requirements
+    throw new Error('Failed to connect to the database');
   }
 };
 
 module.exports = connectDB;
-
