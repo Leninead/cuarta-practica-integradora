@@ -1,7 +1,9 @@
 const Product = require('../models/product.model');
 const Cart = require('../models/cart.model');
 const ProductService = require('../services/product.service');
+const checkUserRole = require('../middlewares/checkUserRole'); // Import the middleware
 
+// ... Existing code ...
 // Get list of products with pagination
 const getProducts = async (req, res) => {
     try {
@@ -36,6 +38,7 @@ const getProductDetails = async (req, res) => {
 };
 
 // Add a product to the cart
+// Add a product to the cart
 const addToCart = async (req, res) => {
     const userId = req.body.userId || req.headers['user-id'];
 
@@ -49,18 +52,21 @@ const addToCart = async (req, res) => {
     try {
         let cart = await Cart.findOne({ userId });
 
+        // Validate user role for adding to cart
+        if (req.user.role !== 'admin' && req.user.role !== 'premium') {
+            // For 'user' role, check if the product is already in the cart
+            const isProductInCart = cart.products.some(product => product.productId === productId);
+            if (isProductInCart) {
+                return res.status(403).json({ message: 'Product already in the cart.' });
+            }
+        }
+
         if (!cart) {
             cart = new Cart({ userId, products: [] });
         }
 
-        const existingProductIndex = cart.products.findIndex(product => product.productId === productId);
-
-        if (existingProductIndex !== -1) {
-            cart.products[existingProductIndex].quantity += quantity;
-        } else {
-            cart.products.push({ productId, quantity });
-        }
-
+        // Add the product to the cart
+        cart.products.push({ productId, quantity });
         await cart.save();
 
         res.status(200).json({ message: 'Product added to cart.', cart });
@@ -69,6 +75,7 @@ const addToCart = async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+
 const addProduct = async (req, res) => {
     // Your logic to add a product goes here
     // Make sure to handle the request and send the appropriate response
@@ -208,6 +215,17 @@ const removeFromCart = async (req, res) => {
         const productId = req.params.productId;
 
         const cart = await Cart.findOne({ userId });
+
+        // Validate user role for deletion
+        if (req.user.role !== 'admin' && req.user.role !== 'premium') {
+            // For 'user' role, check if the product belongs to the user's cart
+            const isProductInCart = cart.products.some(product => product.productId === productId);
+            if (!isProductInCart) {
+                return res.status(403).json({ message: 'Insufficient permissions to remove the product from the cart.' });
+            }
+        }
+
+        // Remove the product from the cart
         cart.products = cart.products.filter(product => product.productId !== productId);
         await cart.save();
 
@@ -216,6 +234,7 @@ const removeFromCart = async (req, res) => {
         res.status(500).json({ message: 'Internal server error.' });
     }
 };
+
 
 module.exports = {
     getProducts,

@@ -193,6 +193,7 @@ Make sure to replace {productId} and "product_id_here" with the actual product I
 }
 
 */
+
 const express = require('express');
 const mongoose = require('mongoose');
 const session = require('express-session');
@@ -211,7 +212,8 @@ const path = require('path');
 const crypto = require('crypto');
 const helmet = require('helmet');
 require('dotenv').config();
-
+const logger = require('./utils/logger');
+const documentsRouter = require('./routes/documents.router');
 const app = express();
 
 const connectDB = require('./db');
@@ -223,6 +225,10 @@ app.set('view engine', 'ejs');
 // Body parsing middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Use the documents router for the documents-related routes under the /api/users path
+app.use('/api/users', documentsRouter);
+
 
 // Configure Passport
 app.use(session({
@@ -283,6 +289,8 @@ app.use((err, req, res, next) => {
   // Send a meaningful error response
   res.status(500).json({ error: 'Internal Server Error' });
 });
+
+logger.info('Server started!');
 
 // Start the server
 const PORT = process.env.PORT || 8080;

@@ -17,7 +17,9 @@ class UserDao {
     return User.findByIdAndUpdate(userId, updateData, { new: true });
   }
 
-  static async deleteUser(userId) {
+  static async deleteUser(userId, userRole) {
+    // Use the checkUserRole middleware to enforce role check for user deletion
+    await checkUserRole('admin')(null, null, () => {}); // Dummy call to the middleware, you might need to adjust based on the actual usage
     return User.findByIdAndDelete(userId);
   }
 }

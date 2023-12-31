@@ -14,11 +14,22 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'admin', 'premium'], // Add 'premium' role
     default: 'user',
   },
+  documents: [
+    {
+      name: String,
+      reference: String,
+    }
+  ],
+  last_connection: {
+    type: Date,
+    default: null,
+  },
 });
 
 userSchema.methods.generateJWT = function () {
   try {
     const token = jwt.sign({ id: this._id }, JWT_SECRET, { expiresIn: '1h' });
+    console.log('Generated JWT:', token);
     return token;
   } catch (error) {
     throw new Error('Error generating JWT: ' + error.message);
