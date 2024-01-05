@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const passport = require('passport');
+const documentsRouter = require('./documents.router'); // Import the documents router
 
 const {
   generatePasswordResetToken,
@@ -10,12 +10,10 @@ const {
   logoutUser,
   adminDashboard,
   getCurrentSessionUser,
-  changeUserRole,
-
 } = require('../controllers/user.controller');
 
 // Import the middlewares
-const authenticateUser = require('../authenticateUser');
+const authenticateUser = require('../middlewares/authenticateUser');
 
 // Route to handle user login
 router.post('/login', (req, res) => loginUser(req, res));
@@ -37,7 +35,6 @@ router.post('/reset-password/:token', (req, res) => resetPassword(req, res));
 router.get('/api/sessions/current', (req, res) => getCurrentSessionUser(req, res));
 
 // Change user role route
-router.put('/:uid/premium', changeUserRole);
-
+router.use('/premium/:uid', documentsRouter);
 
 module.exports = router;

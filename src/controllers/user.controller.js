@@ -38,8 +38,9 @@ exports.registerUser = async (req, res) => {
   }
 };
 
-exports.loginUser = (req, res, next) => {
-  passport.authenticate('local', { session: false }, (err, user, info) => {
+
+exports.loginUser = async (req, res, next) => {
+  passport.authenticate('local', { session: false }, async (err, user, info) => {
     if (err) {
       console.error('Passport authentication error:', err);
       return next(err);
@@ -50,17 +51,25 @@ exports.loginUser = (req, res, next) => {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    // Log the decoded user information
-    console.log('Decoded user:', user);
+    try {
+      // Log the decoded user information
+      console.log('Decoded user:', user);
 
-    // Generate JWT token using the new function
-    const token = generateAuthToken(user._id, user.role);
+      // Update last_connection property on successful login
+      user.last_connection = new Date();
+      await user.save();
 
-    // Return the token to the client
-    return res.status(200).json({ token });
+      // Generate JWT token using the new function
+      const token = generateAuthToken(user._id, user.role);
+
+      // Return the token to the client
+      return res.status(200).json({ token });
+    } catch (error) {
+      console.error('Error updating last_connection on login:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
   })(req, res, next);
 };
-
 exports.getCurrentSessionUser = (req, res) => {
   const token = req.cookies['connect.sid'];
   console.log('Token in getCurrentSessionUser:', token);
@@ -92,20 +101,31 @@ exports.getCurrentSessionUser = (req, res) => {
 
 exports.logoutUser = async (req, res) => {
   console.log('Logout initiated.');
-  req.session.destroy(err => {
-    if (err) {
-      console.error('Error destroying session:', err);
-      return res.status(500).send('Internal server error');
-    }
-    console.log('Session destroyed.');
-    res.redirect('/');
-  });
+  try {
+    // Update last_connection property on logout
+    req.user.last_connection = new Date();
+    await req.user.save();
+
+    // Destroy session
+    req.session.destroy(err => {
+      if (err) {
+        console.error('Error destroying session:', err);
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+      console.log('Session destroyed.');
+      res.redirect('/');
+    });
+  } catch (error) {
+    console.error('Error updating last_connection on logout:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 };
+
 
 exports.adminDashboard = async (req, res) => {
   console.log('Request received for admin dashboard:', req.user);
   try {
-    // Instead of directly checking user.role, use the req.user object provided by passport
+ 
     if (req.user.role === 'admin') {
       return res.status(200).send('Welcome to the admin dashboard.');
     } else {
@@ -218,9 +238,6 @@ exports.resetPassword = async (req, res) => {
 // Change user role
 
 exports.changeUserRole = async (req, res) => {
-  // ... existing code for changing user role ...
-
-  // Include the new logic for upgrading to premium based on completed documents
   const { uid } = req.params;
   const { role } = req.body;
 
@@ -243,6 +260,10 @@ exports.changeUserRole = async (req, res) => {
         // Upgrade to premium logic
         if (areDocumentsComplete(user.documents)) {
           await upgradeUserToPremium(user._id);
+
+          // Call updateUserRole to update the user's role
+          await updateUserRole(user._id, role);
+
           return res.status(200).json({ message: 'User upgraded to premium.' });
         } else {
           return res.status(400).json({ error: 'Incomplete documents. Upgrade to premium requires completed documents.' });
@@ -291,22 +312,22 @@ function areDocumentsComplete(documents) {
 // Helper function to upgrade user to premium
 async function upgradeUserToPremium(userId) {
   try {
-    // Add logic to update the user's role to "premium"
+   
     await User.findByIdAndUpdate(userId, { role: 'premium' });
   } catch (error) {
     console.error('Error upgrading user to premium:', error);
-    throw error; // Propagate the error
+    throw error; 
   }
 }
 
 // Example user service method to update user role
 async function updateUserRole(userId, newRole) {
   try {
-    // Implement your logic to update the user's role in the database
+    
     await User.findByIdAndUpdate(userId, { role: newRole });
   } catch (error) {
     console.error('Error updating user role:', error);
-    throw error; // Propagate the error
+    throw error; 
   }
 }
 
