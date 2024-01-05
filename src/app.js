@@ -10,7 +10,6 @@ Based on the task requirements, you need to:
 6)Update the endpoint /api/users/premium/:uid to only upgrade the user to premium if specific documents are uploaded.
 To proceed, please share the code snippets or files related to these modifications. Specifically, the code for the router modifications, User model changes, the new endpoint for uploading documents, and the logic for checking uploaded documents before upgrading to premium. If you have any questions or face challenges in any specific part, let me know.
 */
-
 const express = require('express');
 const mongoose = require('mongoose');
 const session = require('express-session');
@@ -18,8 +17,9 @@ const bodyParser = require('body-parser');
 const { Strategy: JwtStrategy, ExtractJwt } = require('passport-jwt');
 const passport = require('passport');
 const configurePassport = require('./config/passport.config');
-const usersRouter = require('./routes/users.router');
-const userRouter = require('./routes/user.router'); // Import the new user router
+const userRouter = require('./routes/users.router');
+
+
 const { JWT_SECRET } = require('./config/config');
 const cookieParser = require('cookie-parser');
 const User = require('./models/User');
@@ -29,10 +29,10 @@ const authenticateUser = require('./authenticateUser');
 const path = require('path');
 const crypto = require('crypto');
 const helmet = require('helmet');
-require('dotenv').config();
 const logger = require('./utils/logger');
 const documentsRouter = require('./routes/documents.router');
 const app = express();
+const morgan = require('morgan');
 
 const connectDB = require('./db');
 connectDB();
@@ -44,12 +44,6 @@ app.set('view engine', 'ejs');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Use the documents router for the documents-related routes under the /api/users path
-app.use('/api/users', documentsRouter);
-
-// Use the user router for user-related routes under the /api/users path
-app.use('/api/users', userRouter);
-
 // Configure Passport
 app.use(session({
   secret: crypto.randomBytes(64).toString('hex'),
@@ -59,17 +53,24 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 configurePassport();
-// Use cookie parser
 app.use(cookieParser());
 
-// Use the authentication middleware
-app.use(authenticateUser);
+// Log HTTP requests
+app.use(morgan('combined'));
 
 // Use helmet for security
 app.use(helmet());
 
-// Authentication Routes
-app.use('/users', usersRouter);
+// Use the authentication middleware
+app.use(authenticateUser);
+
+// Use the documents router for the documents-related routes under the /api/users path
+app.use('/api/users', documentsRouter);
+
+// Use the user router for user-related routes under the /api/users path
+app.use('/api/users', userRouter);
+
+
 app.use('/products', productsRouter);
 
 // Use the cart routes
@@ -79,12 +80,7 @@ app.use('/cart', cartRoutes);
 const jwtOptions = {
   jwtFromRequest: ExtractJwt.fromExtractors([
     ExtractJwt.fromAuthHeaderAsBearerToken(),
-    (req) => {
-      if (req && req.cookies) {
-        return req.cookies['jwt']; // Replace 'your-cookie-name' with 'jwt'
-      }
-      return null;
-    },
+    (req) => req.cookies['jwt'],
   ]),
   secretOrKey: JWT_SECRET,
 };
@@ -103,16 +99,18 @@ passport.use(new JwtStrategy(jwtOptions, async (jwtPayload, done) => {
 
 // Error handling
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  logger.error(err.stack);
 
-  // Send a meaningful error response
-  res.status(500).json({ error: 'Internal Server Error' });
+  // Send a meaningful error response based on the environment
+  const errorResponse = process.env.NODE_ENV === 'production'
+    ? { error: 'Internal Server Error' }
+    : { error: err.message, stack: err.stack };
+
+  res.status(500).json(errorResponse);
 });
-
-logger.info('Server started!');
 
 // Start the server
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  logger.info(`Server running on port ${PORT}`);
 });
