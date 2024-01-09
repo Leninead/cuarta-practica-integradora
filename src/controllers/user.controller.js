@@ -23,6 +23,8 @@ exports.registerUser = async (req, res) => {
       password: hashedPassword,
       role: role || 'user', // Default to 'user' role if not provided
     });
+    // Log the user object for debugging
+console.log('New User:', newUser);
 
     // Save the user to the database
     await newUser.save();
@@ -30,14 +32,24 @@ exports.registerUser = async (req, res) => {
     // Generate JWT token using the new function
     const token = generateAuthToken(newUser._id, newUser.role);
 
+    // Log the generated token for debugging
+    console.log('Generated Token:', token);
+
     // Return the token to the client
     return res.status(201).json({ token });
   } catch (error) {
-    console.error('Error during registration: ', error);
-    return res.status(500).send('Internal server error');
+    console.error('Error during registration:', error);
+
+    // Check if the error is a validation error
+    if (error.name === 'ValidationError') {
+      // Return a 400 Bad Request with validation error details
+      return res.status(400).json({ error: 'Validation error', details: error.errors });
+    }
+
+    // Return a generic 500 Internal Server Error
+    return res.status(500).json({ error: 'Internal server error' });
   }
 };
-
 
 exports.loginUser = async (req, res, next) => {
   passport.authenticate('local', { session: false }, async (err, user, info) => {
@@ -62,6 +74,9 @@ exports.loginUser = async (req, res, next) => {
       // Generate JWT token using the new function
       const token = generateAuthToken(user._id, user.role);
 
+      // Log the generated token for debugging
+      console.log('Generated Token:', token);
+
       // Return the token to the client
       return res.status(200).json({ token });
     } catch (error) {
@@ -70,6 +85,7 @@ exports.loginUser = async (req, res, next) => {
     }
   })(req, res, next);
 };
+
 exports.getCurrentSessionUser = (req, res) => {
   const token = req.cookies['connect.sid'];
   console.log('Token in getCurrentSessionUser:', token);

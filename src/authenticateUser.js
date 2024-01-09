@@ -19,7 +19,7 @@ module.exports = (req, res, next) => {
       // Log the decoded user information
       console.log('Decoded user:', user);
 
-      // Set the user in the request object
+      // Set the authenticated user in the request object
       req.user = user;
 
       console.log('Authentication successful. User:', user);

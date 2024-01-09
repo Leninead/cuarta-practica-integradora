@@ -26,6 +26,7 @@ const userSchema = new mongoose.Schema({
   },
 });
 
+// Inside user model generateJWT method
 userSchema.methods.generateJWT = function () {
   try {
     const token = jwt.sign({ id: this._id }, JWT_SECRET, { expiresIn: '1h' });
@@ -35,5 +36,6 @@ userSchema.methods.generateJWT = function () {
     throw new Error('Error generating JWT: ' + error.message);
   }
 };
+
 
 module.exports = mongoose.model('User', userSchema);
